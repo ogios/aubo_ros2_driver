@@ -229,10 +229,11 @@ int AuboHardwareInterface::startServoMode()
     // 接口调用 : 获取机器人的名字
     auto robot_name = rpc_client_->getRobotNames().front();
 
-    //开启servo模式
-    rpc_client_->getRobotInterface(robot_name)
-        ->getMotionControl()
-        ->setServoMode(true);
+    // 2: 透传模式。0 退出，1 规划伺服。
+    const int select_result = rpc_client_->getRobotInterface(robot_name)
+                                  ->getMotionControl()
+                                  ->setServoModeSelect(2);
+    std::cout << "setServoModeSelect(2) result " << select_result << std::endl;
     int i = 0;
     while (!rpc_client_->getRobotInterface(robot_name)
                 ->getMotionControl()
@@ -247,6 +248,10 @@ int AuboHardwareInterface::startServoMode()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
+    const int servo_mode = rpc_client_->getRobotInterface(robot_name)
+                               ->getMotionControl()
+                               ->getServoModeSelect();
+    std::cout << "servo mode " << servo_mode << std::endl;
     servo_mode_start_ = true;
     return 0;
 }
@@ -264,11 +269,11 @@ int AuboHardwareInterface::stopServoMode()
                 ->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    // 关闭servo模式
+    // 0: 退出伺服模式
     int i = 0;
     rpc_client_->getRobotInterface(robot_name)
         ->getMotionControl()
-        ->setServoMode(false);
+        ->setServoModeSelect(0);
     while (rpc_client_->getRobotInterface(robot_name)
                ->getMotionControl()
                ->isServoModeEnabled()) {
@@ -304,7 +309,7 @@ int AuboHardwareInterface::Servoj(
                 
         rpc_client_->getRobotInterface(robot_name)
         ->getMotionControl()
-        ->setServoMode(true);           
+        ->setServoModeSelect(2); 
     }
     // 接口调用: servoJoint
     while (true) {
